@@ -1,229 +1,123 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Eye Controlled Keyboard</title>
+  <meta charset="UTF-8" />
+  <title>Eye‑Controlled Keyboard</title>
   <style>
-    body {
-      margin: 0;
-      background: #111;
-      font-family: sans-serif;
-      overflow: hidden;
-      color: #fff;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    #videoElement {
-      position: fixed;
-      top: 10px;
-      left: 10px;
-      width: 160px;
-      height: 120px;
-      border: 2px solid #666;
-      border-radius: 8px;
-      transform: scaleX(-1); /* mirror camera */
-      opacity: 0.7;
-      z-index: 100;
-    }
-
-    #cursor {
-      position: fixed;
-      width: 30px;
-      height: 30px;
-      background: rgba(255, 0, 0, 0.7);
-      border-radius: 50%;
-      pointer-events: none;
-      transition: 0.2s;
-      transform: translate(-50%, -50%);
-      z-index: 999;
-    }
-
-    #clickEffect {
-      position: fixed;
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-      border: 3px solid yellow;
-      pointer-events: none;
-      top: 0;
-      left: 0;
-      opacity: 0;
-      transform: translate(-50%, -50%);
-      transition: opacity 0.3s ease;
-      z-index: 999;
-    }
-
-    #display {
-      margin-top: 180px;
-      width: 300px;
-      height: 50px;
-      background: #333;
-      border-radius: 8px;
-      text-align: center;
-      font-size: 28px;
-      line-height: 50px;
-      border: 2px solid #666;
-    }
-
-    #keyboard {
-      display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-      margin-top: 20px;
-      gap: 10px;
-    }
-
-    .key {
-      width: 60px;
-      height: 60px;
-      background: #444;
-      border: 2px solid #777;
-      border-radius: 8px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-size: 24px;
-      cursor: pointer;
-      user-select: none;
-      position: relative;
-      z-index: 10;
-    }
-
-    .key:hover {
-      background: #666;
-    }
+    body { margin: 0; background: #111; color: #eee; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; }
+    button { padding: 15px 30px; font-size: 1.2em; cursor: pointer; }
+    #app { display: none; width: 100%; height: 100%; position: relative; }
+    #video { position: fixed; top: 10px; left: 10px; width: 160px; border-radius: 8px; transform: scaleX(-1); opacity: 0.7; }
+    #cursor { position: fixed; width: 30px; height: 30px; background: rgba(255,0,0,0.7); border-radius: 50%; pointer-events: none; transform: translate(-50%, -50%); }
+    #clickFx { position: fixed; width: 50px; height: 50px; border: 3px solid yellow; border-radius: 50%; pointer-events: none; opacity: 0; transform: translate(-50%, -50%); transition: opacity 0.3s; }
+    #display { margin-top: 150px; font-size: 2em; background: #333; padding: 10px 20px; border-radius: 8px; }
+    #keyboard { margin-top: 20px; display: flex; gap: 10px; }
+    .key { width: 60px; height: 60px; background: #444; color: #fff; font-size: 1.5em; display: flex; align-items: center; justify-content: center; border-radius: 8px; }
   </style>
 </head>
 <body>
 
-<video id="videoElement" autoplay muted playsinline></video>
-<div id="cursor"></div>
-<div id="clickEffect"></div>
+<button id="start-btn">Start Eye‑Controlled Keyboard</button>
 
-<div id="display">Click digits</div>
-<div id="keyboard">
-  <div class="key">1</div>
-  <div class="key">2</div>
-  <div class="key">3</div>
-  <div class="key">4</div>
-  <div class="key">5</div>
-  <div class="key">6</div>
-  <div class="key">7</div>
+<div id="app">
+  <video id="video" autoplay muted playsinline></video>
+  <div id="cursor"></div>
+  <div id="clickFx"></div>
+  <div id="display">Type here:</div>
+  <div id="keyboard">
+    <div class="key">1</div><div class="key">2</div><div class="key">3</div>
+    <div class="key">4</div><div class="key">5</div><div class="key">6</div>
+    <div class="key">7</div>
+  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4/face_mesh.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.4/camera_utils.js"></script>
-
 <script>
-  const videoElement = document.getElementById('videoElement');
-  const cursor = document.getElementById('cursor');
-  const clickEffect = document.getElementById('clickEffect');
-  const display = document.getElementById('display');
-  const keys = document.querySelectorAll('.key');
+  const startBtn = document.getElementById('start-btn');
+  const app = document.getElementById('app');
 
-  let lastX = window.innerWidth / 2;
-  let lastY = window.innerHeight / 2;
-  let blinkStartTime = null;
-  const BLINK_THRESHOLD = 0.25;
-  const BLINK_HOLD_TIME = 300;
-
-  const LEFT_EYE_INDICES = [33, 160, 158, 133, 153, 144];
-  const RIGHT_EYE_INDICES = [362, 385, 387, 263, 373, 380];
-
-  const faceMesh = new FaceMesh.FaceMesh({
-    locateFile: file => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4/${file}`
+  startBtn.addEventListener('click', () => {
+    startBtn.style.display = 'none';
+    app.style.display = 'block';
+    startCameraAndTracking();
   });
 
-  faceMesh.setOptions({
-    maxNumFaces: 1,
-    refineLandmarks: true,
-    minDetectionConfidence: 0.7,
-    minTrackingConfidence: 0.7
-  });
+  async function startCameraAndTracking() {
+    const video = document.getElementById('video');
+    const cursor = document.getElementById('cursor');
+    const clickFx = document.getElementById('clickFx');
+    const display = document.getElementById('display');
+    const keys = document.querySelectorAll('.key');
 
-  function averagePoint(points) {
-    let sumX = 0, sumY = 0;
-    points.forEach(p => {
-      sumX += p.x;
-      sumY += p.y;
+    const faceMesh = new FaceMesh.FaceMesh({
+      locateFile: file => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4/${file}`
     });
-    return { x: sumX / points.length, y: sumY / points.length };
+    faceMesh.setOptions({
+      maxNumFaces: 1,
+      refineLandmarks: true,
+      minDetectionConfidence: 0.7,
+      minTrackingConfidence: 0.7
+    });
+
+    let lastX = window.innerWidth / 2, lastY = window.innerHeight / 2;
+    let blinkStart = null;
+    const BLINK_TH = 0.25, BLINK_HOLD = 300;
+
+    const LEFT = [33,160,158,133,153,144];
+    const RIGHT = [362,385,387,263,373,380];
+
+    function avg(indices, landmarks) {
+      let x=0,y=0;
+      indices.forEach(i => { x += landmarks[i].x; y += landmarks[i].y; });
+      return {x: x/indices.length, y: y/indices.length};
+    }
+
+    function EAR(landmarks, set) {
+      const eye = set.map(i => landmarks[i]);
+      const d = (a,b) => Math.hypot(a.x-b.x,a.y-b.y);
+      const v1 = d(eye[1],eye[5]), v2 = d(eye[2],eye[4]), h = d(eye[0],eye[3]);
+      return (v1 + v2) / (2*h);
+    }
+
+    function clickAt(x, y) {
+      const el = document.elementFromPoint(x,y);
+      if (el && el.classList.contains('key')) display.textContent += el.textContent;
+    }
+
+    faceMesh.onResults(res => {
+      if (!res.multiFaceLandmarks) return;
+      const lm = res.multiFaceLandmarks[0];
+      const lC = avg(LEFT, lm);
+      const rC = avg(RIGHT, lm);
+      const center = {x: (lC.x+rC.x)/2, y: (lC.y+rC.y)/2};
+
+      const tx = window.innerWidth * (1-center.x);
+      const ty = window.innerHeight * center.y;
+      lastX += (tx-lastX)*0.3; lastY += (ty-lastY)*0.3;
+      cursor.style.left = lastX + 'px';
+      cursor.style.top = lastY + 'px';
+
+      const ear = (EAR(lm, LEFT) + EAR(lm, RIGHT)) / 2;
+      if (ear < BLINK_TH) {
+        if (!blinkStart) blinkStart = performance.now();
+        else if (performance.now() - blinkStart > BLINK_HOLD) {
+          clickFx.style.left = lastX + 'px';
+          clickFx.style.top = lastY + 'px';
+          clickFx.style.opacity = 1;
+          setTimeout(() => clickFx.style.opacity = 0, 300);
+          clickAt(lastX, lastY);
+          blinkStart = null;
+        }
+      } else blinkStart = null;
+    });
+
+    const cam = new Camera.Camera(video, {
+      onFrame: async () => await faceMesh.send({image: video}),
+      width: 640, height: 480
+    });
+    cam.start();
   }
-
-  function calculateEAR(landmarks, leftIndices, rightIndices) {
-    function dist(a, b) {
-      return Math.hypot(a.x - b.x, a.y - b.y);
-    }
-    function ear(eye) {
-      const v1 = dist(eye[1], eye[5]);
-      const v2 = dist(eye[2], eye[4]);
-      const h = dist(eye[0], eye[3]);
-      return (v1 + v2) / (2.0 * h);
-    }
-    const leftEye = leftIndices.map(i => landmarks[i]);
-    const rightEye = rightIndices.map(i => landmarks[i]);
-    return (ear(leftEye) + ear(rightEye)) / 2.0;
-  }
-
-  function simulateClick(x, y) {
-    const element = document.elementFromPoint(x, y);
-    if (element && element.classList.contains('key')) {
-      const key = element.textContent.trim();
-      display.textContent += key;
-    }
-  }
-
-  faceMesh.onResults(results => {
-    if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) return;
-    const landmarks = results.multiFaceLandmarks[0];
-
-    const leftEyeCenter = averagePoint(LEFT_EYE_INDICES.map(i => landmarks[i]));
-    const rightEyeCenter = averagePoint(RIGHT_EYE_INDICES.map(i => landmarks[i]));
-
-    const eyeCenter = {
-      x: (leftEyeCenter.x + rightEyeCenter.x) / 2,
-      y: (leftEyeCenter.y + rightEyeCenter.y) / 2
-    };
-
-    let x = window.innerWidth * (1 - eyeCenter.x);
-    let y = window.innerHeight * eyeCenter.y;
-
-    lastX += (x - lastX) * 0.3;
-    lastY += (y - lastY) * 0.3;
-
-    cursor.style.left = lastX + 'px';
-    cursor.style.top = lastY + 'px';
-
-    const ear = calculateEAR(landmarks, LEFT_EYE_INDICES, RIGHT_EYE_INDICES);
-
-    if (ear < BLINK_THRESHOLD) {
-      if (!blinkStartTime) {
-        blinkStartTime = performance.now();
-      } else if (performance.now() - blinkStartTime > BLINK_HOLD_TIME) {
-        clickEffect.style.left = lastX + 'px';
-        clickEffect.style.top = lastY + 'px';
-        clickEffect.style.opacity = 1;
-        setTimeout(() => clickEffect.style.opacity = 0, 300);
-
-        simulateClick(lastX, lastY);
-        blinkStartTime = null;
-      }
-    } else {
-      blinkStartTime = null;
-    }
-  });
-
-  const camera = new Camera.Camera(videoElement, {
-    onFrame: async () => {
-      await faceMesh.send({ image: videoElement });
-    },
-    width: 640,
-    height: 480
-  });
-
-  camera.start();
 </script>
 
 </body>
