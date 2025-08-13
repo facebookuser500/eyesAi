@@ -2,252 +2,140 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Eye-Controlled Keyboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kundan's URL Shortener</title>
 <style>
   body {
-    margin: 0; background: #121212; color: #eee;
+    margin: 0;
+    padding: 0;
     font-family: 'Segoe UI', sans-serif;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    height: 100vh; overflow: hidden;
+    background: url('https://images.unsplash.com/photo-1521747116042-5a810fda9664') no-repeat center center/cover;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
   }
-  #start-container {
+  .card {
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    background-color: rgba(255, 255, 255, 0.15);
+    border-radius: 20px;
+    padding: 30px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
     text-align: center;
-    max-width: 90%;
-    padding: 20px;
-    border: 2px solid #444;
-    border-radius: 12px;
-    background: #222;
-  }
-  #start-button {
-    margin-top: 20px;
-    padding: 12px 25px;
-    font-size: 1.2em;
-    cursor: pointer;
-    border: none;
-    border-radius: 10px;
-    background: #00aaff;
     color: white;
   }
-  #start-button:hover {
-    background: #0088cc;
+  h1 { font-size: 24px; margin-bottom: 10px; }
+  h2 { font-size: 18px; margin-bottom: 15px; font-weight: normal; }
+  p { font-size: 14px; opacity: 0.8; margin-bottom: 20px; }
+  input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: none;
+    margin-bottom: 10px;
+    outline: none;
+    font-size: 14px;
   }
-  #app {
+  button {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: none;
+    background: #00c6ff;
+    background: linear-gradient(90deg, #0072ff, #00c6ff);
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+    margin-bottom: 10px;
+  }
+  button:hover {
+    opacity: 0.9;
+  }
+  #shortUrlBox {
     display: none;
-    width: 100vw; height: 100vh;
-    position: relative;
-    background: #111;
-  }
-  video#video {
-    position: fixed;
-    top: 10px; left: 10px;
-    width: 25vw; max-width: 140px;
-    height: auto;
-    border-radius: 10px;
-    transform: scaleX(-1);
-    opacity: 0.75;
-    border: 2px solid #666;
-    z-index: 20;
-  }
-  #cursor {
-    position: fixed;
-    width: 5vw; max-width: 30px; height: 5vw; max-height: 30px;
-    background: rgba(255, 50, 50, 0.7);
-    border-radius: 50%;
-    pointer-events: none;
-    transform: translate(-50%, -50%);
-    z-index: 1000;
-  }
-  #click-effect {
-    position: fixed;
-    width: 8vw; max-width: 50px; height: 8vw; max-height: 50px;
-    border-radius: 50%;
-    border: 3px solid yellow;
-    pointer-events: none;
-    opacity: 0;
-    transform: translate(-50%, -50%);
-    transition: opacity 0.3s ease;
-    z-index: 999;
-  }
-  #display {
-    position: fixed;
-    top: 20vh; left: 50%;
-    transform: translateX(-50%);
-    font-size: clamp(1.2em, 4vw, 2em);
-    background: #222;
-    padding: 10px 20px;
-    border-radius: 10px;
-    color: #0f0;
-    text-align: center;
-    font-weight: 600;
-    box-shadow: 0 0 10px #00ff44aa;
-    font-family: monospace;
-    letter-spacing: 2px;
-    white-space: nowrap;
-  }
-  #display::after {
-    content: '|';
-    margin-left: 4px;
-    animation: blink 1s steps(2, start) infinite;
-  }
-  @keyframes blink {
-    0%, 50% { opacity: 1; }
-    51%, 100% { opacity: 0; }
-  }
-  #keyboard {
-    position: fixed;
-    bottom: 5vh; left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 4vw;
-    z-index: 10;
-  }
-  .key {
-    background: #333;
-    color: #eee;
-    font-size: clamp(1.5em, 6vw, 2em);
-    padding: 2vh 0;
-    border-radius: 12px;
-    width: 12vw; max-width: 80px; height: 12vw; max-height: 80px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 0 8px #00aaffaa;
-    font-weight: 700;
-  }
-  .key.clicked {
-    background: #00aaff;
-    color: #000;
-    transform: scale(0.95);
-    box-shadow: 0 0 20px #00ffff;
   }
 </style>
 </head>
 <body>
 
-<div id="start-container">
-  <h2>Eye-Controlled Keyboard</h2>
-  <p>This app uses your camera to track eye movement & blinking.<br>
-  Click start and allow camera access.</p>
-  <button id="start-button">Start Eye Control</button>
-</div>
+<div class="card">
+  <h1>Hey 👋</h1>
+  <h2>Welcome to Kundan's URL Shortener</h2>
+  <p>You can paste your long URL and create your short URL with your own custom ending.</p>
 
-<div id="app">
-  <video id="video" autoplay muted playsinline></video>
-  <div id="cursor"></div>
-  <div id="click-effect"></div>
-  <div id="display">Type here:</div>
-  <div id="keyboard">
-    <div class="key">1</div>
-    <div class="key">2</div>
-    <div class="key">3</div>
-    <div class="key">4</div>
-    <div class="key">5</div>
-    <div class="key">6</div>
-    <div class="key">7</div>
+  <input type="text" id="longUrl" placeholder="Enter your Long URL here">
+  <button onclick="showShortUrlInput()">Done</button>
+
+  <div id="shortUrlBox">
+    <input type="text" id="customSlug" value="https://">
+    <button onclick="copyShortUrl()">Copy URL</button>
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4/face_mesh.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.4/camera_utils.js"></script>
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js"></script>
 
 <script>
-const startBtn = document.getElementById('start-button');
-const startContainer = document.getElementById('start-container');
-const app = document.getElementById('app');
+  // Your Firebase config
+  const firebaseConfig = {
+    apiKey: "AIzaSyApWu4hBsGjUUO7u4w3BxhQneGI5HcZFwk",
+    authDomain: "shortyoururl-da0d2.firebaseapp.com",
+    projectId: "shortyoururl-da0d2",
+    storageBucket: "shortyoururl-da0d2.appspot.com",
+    messagingSenderId: "366187764080",
+    appId: "1:366187764080:web:7dad8f39288af2760157b5",
+    measurementId: "G-0JS4FTKTF7"
+  };
 
-startBtn.addEventListener('click', async () => {
-  try {
-    const video = document.getElementById('video');
-    await navigator.mediaDevices.getUserMedia({ video: true }); // Force permission
-    startContainer.style.display = 'none';
-    app.style.display = 'block';
-    startEyeTracking();
-  } catch (err) {
-    alert("Camera access denied or not available.");
-  }
-});
+  // Init Firebase
+  const app = firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
 
-async function startEyeTracking() {
-  const video = document.getElementById('video');
-  const cursor = document.getElementById('cursor');
-  const clickEffect = document.getElementById('click-effect');
-  const display = document.getElementById('display');
+  let savedLongUrl = "";
 
-  const faceMesh = new FaceMesh.FaceMesh({
-    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4/${file}`
-  });
-  faceMesh.setOptions({
-    maxNumFaces: 1,
-    refineLandmarks: true,
-    minDetectionConfidence: 0.6,
-    minTrackingConfidence: 0.6
-  });
-
-  let lastX = window.innerWidth / 2, lastY = window.innerHeight / 2;
-  let blinkStartTime = null;
-  const BLINK_THRESHOLD = 0.25, BLINK_HOLD_TIME = 350;
-  const LEFT_EYE_INDICES = [33, 160, 158, 133, 153, 144];
-  const RIGHT_EYE_INDICES = [362, 385, 387, 263, 373, 380];
-
-  function avgPoint(points) {
-    return {
-      x: points.reduce((sum, p) => sum + p.x, 0) / points.length,
-      y: points.reduce((sum, p) => sum + p.y, 0) / points.length
-    };
-  }
-  function ear(eye) {
-    const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
-    const v1 = dist(eye[1], eye[5]);
-    const v2 = dist(eye[2], eye[4]);
-    const h = dist(eye[0], eye[3]);
-    return (v1 + v2) / (2.0 * h);
-  }
-  function clickKeyAt(x, y) {
-    const el = document.elementFromPoint(x, y);
-    if (el && el.classList.contains('key')) {
-      el.classList.add('clicked');
-      display.textContent += el.textContent;
-      setTimeout(() => el.classList.remove('clicked'), 200);
+  function showShortUrlInput() {
+    const longUrlInput = document.getElementById("longUrl").value.trim();
+    if (!longUrlInput.startsWith("http")) {
+      alert("Please enter a valid URL starting with http or https");
+      return;
     }
+    savedLongUrl = longUrlInput;
+    document.getElementById("shortUrlBox").style.display = "block";
   }
 
-  faceMesh.onResults(results => {
-    if (!results.multiFaceLandmarks.length) return;
-    const lm = results.multiFaceLandmarks[0];
+  async function copyShortUrl() {
+    const slugFull = document.getElementById("customSlug").value.trim();
+    if (!slugFull.startsWith("https://")) {
+      alert("The short URL must start with https://");
+      return;
+    }
 
-    const leftEyeCenter = avgPoint(LEFT_EYE_INDICES.map(i => lm[i]));
-    const rightEyeCenter = avgPoint(RIGHT_EYE_INDICES.map(i => lm[i]));
-    const eyeCenter = { x: (leftEyeCenter.x + rightEyeCenter.x) / 2, y: (leftEyeCenter.y + rightEyeCenter.y) / 2 };
+    // Extract slug after https://
+    const slug = slugFull.replace("https://", "").trim();
 
-    let x = window.innerWidth * (1 - eyeCenter.x);
-    let y = window.innerHeight * eyeCenter.y;
-    lastX += (x - lastX) * 0.3;
-    lastY += (y - lastY) * 0.3;
+    await db.collection("shorturls").doc(slug).set({
+      longUrl: savedLongUrl
+    });
 
-    cursor.style.left = lastX + 'px';
-    cursor.style.top = lastY + 'px';
+    navigator.clipboard.writeText(slugFull).then(() => {
+      alert("Short URL copied to clipboard!");
+    });
+  }
 
-    const earVal = (ear(LEFT_EYE_INDICES.map(i => lm[i])) + ear(RIGHT_EYE_INDICES.map(i => lm[i]))) / 2;
-    if (earVal < BLINK_THRESHOLD) {
-      if (!blinkStartTime) blinkStartTime = performance.now();
-      else if (performance.now() - blinkStartTime > BLINK_HOLD_TIME) {
-        clickEffect.style.left = lastX + 'px';
-        clickEffect.style.top = lastY + 'px';
-        clickEffect.style.opacity = 1;
-        clickKeyAt(lastX, lastY);
-        setTimeout(() => clickEffect.style.opacity = 0, 300);
-        blinkStartTime = null;
+  // Redirect handler if someone visits directly with slug
+  window.onload = async () => {
+    const path = window.location.pathname.replace("/", "");
+    if (path) {
+      const doc = await db.collection("shorturls").doc(path).get();
+      if (doc.exists) {
+        window.location.href = doc.data().longUrl;
       }
-    } else blinkStartTime = null;
-  });
-
-  const camera = new Camera.Camera(video, {
-    onFrame: async () => await faceMesh.send({ image: video }),
-    width: 640, height: 480
-  });
-  camera.start();
-}
+    }
+  };
 </script>
 
 </body>
